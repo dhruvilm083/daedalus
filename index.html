@@ -23,10 +23,13 @@
   --ease: cubic-bezier(.65,0,.2,1);
   --slide: min(72vw, 1000px, calc((100vh - 280px) * 1.6));
   --gap: clamp(16px, 3vw, 40px);
+  --glow-strength: 16%;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; color-scheme: dark; }
 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glow-strength: 20%; } }
+:root[data-theme="dark"] { --glow-strength: 20%; }
 :root[data-theme="dark"] { --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -49,6 +52,15 @@ a { color: inherit; text-decoration: none; }
 .muted { color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* ---------- lightbox ---------- */
+/* spotlight in the colour of each site's footer heart; --glow is set per slide from script */
+@property --glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
+.box { position: relative; isolation: isolate; transition: --glow 1.2s ease; }
+.box::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse calc(var(--slide) * .75) calc(var(--slide) * .5) at 50% 45%, color-mix(in srgb, var(--glow) var(--glow-strength), transparent), transparent 70%),
+    radial-gradient(ellipse calc(var(--slide) * .35) 60% at 50% 0%, color-mix(in srgb, var(--glow) calc(var(--glow-strength) * .6), transparent), transparent 75%);
+}
 .box { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding-block: 24px; min-height: 0; }
 .track { position: relative; height: calc(var(--slide) * 10 / 16); touch-action: pan-y; user-select: none; }
 .slide {
@@ -66,6 +78,7 @@ a { color: inherit; text-decoration: none; }
 .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
 .shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
 .slide:not(.on) { opacity: .35; cursor: pointer; }
+.slide.on .shot { box-shadow: 0 30px 90px -30px color-mix(in srgb, var(--glow) 55%, rgb(0 0 0 / .25)); }
 .slide:not(.on) .shot { pointer-events: none; }
 
 .cap {
@@ -106,15 +119,16 @@ a { color: inherit; text-decoration: none; }
 
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
+// `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
 const PROJECTS = [
-  { id: "calendai", name: "calendAI", url: "https://calendai.ca", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
-  { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", cap: "job alerts, by text", shot: "shots/scrapify.png" },
-  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", cap: "can ai do it yet?", shot: "shots/statusofai.png" },
-  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", cap: "photographs", shot: "shots/dmphotos.png" },
-  { id: "washtag", name: "Washtag", url: "https://washtag-green.vercel.app", cap: "laundry labels, decoded", shot: "shots/washtag.png" }
+  { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
+  { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#c7ccd6", cap: "job alerts, by text", shot: "shots/scrapify.png" },
+  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png" },
+  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#3b82f6", cap: "photographs", shot: "shots/dmphotos.png" },
+  { id: "washtag", name: "Washtag", url: "https://washtag-green.vercel.app", heart: "#22c55e", cap: "laundry labels, decoded", shot: "shots/washtag.png" }
 ];
 
-const track = document.getElementById("track"), cap = document.getElementById("cap");
+const box = document.querySelector(".box"), track = document.getElementById("track"), cap = document.getElementById("cap");
 const n = PROJECTS.length;
 document.getElementById("count").textContent = n + " projects";
 
@@ -151,6 +165,7 @@ function render() {
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
   const p = PROJECTS[cur];
+  box.style.setProperty("--glow", p.heart || "transparent");
   cap.classList.add("fade");
   setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, 200);
 }
