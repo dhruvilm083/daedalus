@@ -7,347 +7,175 @@
 <meta name="description" content="Projects made under daedalus.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap">
 <style>
-/* Layout: a quiet index of four rows; each row opens a full project view you can page through with arrows. */
+/* Layout: header, one infinite sliding lightbox of live-site previews with an italic caption, footer. Nothing else. */
 :root {
   --bg: #f7f7f5;
   --surface: #ffffff;
   --ink: #111213;
   --muted: #6d6f73;
   --line: #e3e3e0;
-  --accent: #2f5bff;
   --font: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --ease: cubic-bezier(.2,.7,.1,1);
+  --ease: cubic-bezier(.65,0,.2,1);
+  --slide: min(72vw, 1000px, calc((100vh - 280px) * 1.6));
+  --gap: clamp(16px, 3vw, 40px);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; --accent: #7d97ff;
-    color-scheme: dark;
-  }
+  :root:not([data-theme="light"]) { --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; color-scheme: dark; }
 }
-:root[data-theme="dark"] {
-  --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; --accent: #7d97ff;
-  color-scheme: dark;
-}
+:root[data-theme="dark"] { --bg: #0d0e10; --surface: #16171a; --ink: #ececea; --muted: #8b8d92; --line: #26272b; color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { background: var(--bg); }
+html, body { background: var(--bg); height: 100%; }
 body {
-  margin: 0; color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
+  margin: 0; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
   -webkit-font-smoothing: antialiased; font-optical-sizing: auto;
+  display: flex; flex-direction: column; min-height: 100%; overflow-x: hidden;
 }
 a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
 
-.wrap {
-  max-width: 1120px; margin: 0 auto;
+.edge {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+  padding-block: 28px;
   padding-left: max(24px, env(safe-area-inset-left, 0px));
   padding-right: max(24px, env(safe-area-inset-right, 0px));
 }
-@media (max-width: 480px) {
-  .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-}
-
-header.top {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding-block: 28px; font-size: 15px;
-}
 .word { font-weight: 600; letter-spacing: -0.01em; }
-.count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); font-variant-numeric: tabular-nums; }
 
-/* ---------- index ---------- */
-.intro { padding-block: 72px 56px; }
-.intro h1 {
-  margin: 0; font-weight: 400; font-size: clamp(30px, 4.4vw, 52px); line-height: 1.08;
-  letter-spacing: -0.035em; max-width: 16ch; text-wrap: balance;
+/* ---------- lightbox ---------- */
+.box { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding-block: 24px; min-height: 0; }
+.track { position: relative; height: calc(var(--slide) * 10 / 16); touch-action: pan-y; user-select: none; }
+.slide {
+  position: absolute; top: 0; left: 50%; width: var(--slide); height: 100%;
+  margin-left: calc(var(--slide) / -2);
+  transition: transform .8s var(--ease), opacity .8s var(--ease);
+  will-change: transform;
 }
-.intro h1 span { color: var(--muted); }
-
-.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: start; padding-bottom: 96px; }
-.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.row {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px;
-  width: 100%; text-align: left; padding: 22px 0; border-bottom: 1px solid var(--line);
+.slide.jump { transition: none; }
+.shot {
+  display: block; width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / .25);
 }
-.row .name { font-size: clamp(22px, 2.4vw, 28px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; transition: transform .45s var(--ease); }
-.row .sub { display: block; color: var(--muted); font-size: 15px; margin-top: 4px; transition: transform .45s var(--ease); }
-.row .soon { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; margin-right: 10px; vertical-align: middle; }
-.row .arrow { color: var(--muted); font-size: 20px; transition: transform .45s var(--ease), color .2s; }
-.row:hover .name, .row:hover .sub, .row.on .name, .row.on .sub { transform: translateX(6px); }
-.row:hover .arrow, .row.on .arrow { color: var(--ink); transform: translateX(4px); }
-.list:hover .row:not(:hover) .name { color: var(--muted); }
+.shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
+.shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
+.slide:not(.on) { opacity: .35; cursor: pointer; }
+.slide:not(.on) .shot { pointer-events: none; }
 
-.stage { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); }
-.stage .meta { display: flex; justify-content: space-between; margin-top: 14px; font-size: 13px; color: var(--muted); }
-
-@media (max-width: 860px) {
-  .grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .stage { display: none; }
-  .intro { padding-block: 40px 36px; }
+.cap {
+  margin: 28px auto 0; text-align: center; font-style: italic; font-size: 16px; color: var(--muted);
+  min-height: 1.5em; transition: opacity .4s ease;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
 }
+.cap b { font-weight: 500; color: var(--ink); }
+.cap.fade { opacity: 0; }
 
-/* ---------- browser frame + mocks ---------- */
-.frame {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
-  aspect-ratio: 16 / 11; max-width: 100%; display: flex; flex-direction: column;
+@media (max-width: 640px) {
+  :root { --slide: 84vw; --gap: 12px; }
+  .edge { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 }
-.bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
-.bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
-.bar span { margin-left: 8px; }
-.screen { position: relative; flex: 1; min-height: 0; }
-.mock { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .35s ease; padding: 24px; }
-.mock.show { opacity: 1; }
-.mock img.shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-
-/* status of ai */
-.m-status { text-align: center; }
-.m-status .q { font-size: clamp(26px, 3.6vw, 44px); font-weight: 500; letter-spacing: -0.03em; }
-.m-status .ask { display: inline-flex; gap: 10px; align-items: center; margin-top: 18px; }
-.m-status .ask u { display: block; width: 150px; height: 1px; background: var(--ink); text-decoration: none; opacity: .5; }
-.m-status .ask b { font-weight: 500; font-size: 13px; padding: 6px 14px; border: 1px solid var(--ink); border-radius: 999px; }
-
-/* scrapify */
-.m-scrap .t { font-size: clamp(24px, 3.2vw, 38px); font-weight: 600; letter-spacing: -0.03em; }
-.m-scrap .t em { font-style: normal; animation: blink 1.1s steps(1) infinite; }
-.m-scrap .f { display: flex; gap: 8px; margin-top: 16px; }
-.m-scrap .f span { flex: 1; height: 34px; border: 1px solid var(--line); border-radius: 8px; display: flex; align-items: center; padding: 0 12px; color: var(--muted); font-size: 13px; letter-spacing: .2em; }
-.m-scrap .f b { font-weight: 500; font-size: 13px; padding: 0 14px; display: grid; place-items: center; background: var(--ink); color: var(--bg); border-radius: 8px; }
-@keyframes blink { 50% { opacity: 0; } }
-
-/* dmphotos */
-.m-photo { align-content: start; justify-items: stretch; }
-.m-photo .h { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 14px; }
-.m-photo .g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.m-photo .g i { aspect-ratio: 4/5; border-radius: 4px; background: var(--line); }
-.m-photo .g i:nth-child(1) { background: linear-gradient(160deg, #c9d3dd, #7b8794); }
-.m-photo .g i:nth-child(2) { background: linear-gradient(200deg, #e6d9c7, #a38b6d); }
-.m-photo .g i:nth-child(3) { background: linear-gradient(180deg, #9fb3a3, #4d5f52); }
-.m-photo .g i:nth-child(4) { background: linear-gradient(170deg, #2b2f36, #5d6673); }
-.m-photo .g i:nth-child(5) { background: linear-gradient(190deg, #d8c3c6, #8e6e74); }
-.m-photo .g i:nth-child(6) { background: linear-gradient(150deg, #b9c7d8, #3f5672); }
-
-/* washtag */
-.m-wash { text-align: center; }
-.m-wash .t { font-size: clamp(26px, 3.6vw, 44px); font-weight: 500; letter-spacing: -0.03em; }
-.m-wash .c { display: inline-block; margin-top: 14px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
-
-/* calendai */
-.m-cal { justify-items: start; align-content: center; }
-.m-cal .h { font-size: clamp(22px, 3vw, 34px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; max-width: 14ch; }
-.m-cal .s { color: var(--muted); font-size: 13px; margin-top: 8px; }
-.m-cal .ev { margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; display: grid; gap: 2px; min-width: 220px; }
-.m-cal .ev b { font-weight: 500; }
-.m-cal .ev span { color: var(--muted); }
-.m-cal .ev .ok { margin-top: 8px; justify-self: start; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--accent); color: #fff; }
-
-/* ---------- project view ---------- */
-.view { display: none; padding-block: 24px 80px; }
-body.detail .index { display: none; }
-body.detail .view { display: block; animation: rise .5s var(--ease); }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.back { color: var(--muted); font-size: 15px; transition: color .2s; }
-.back:hover { color: var(--ink); }
-.vhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; margin-block: 40px 32px; }
-.vhead h2 { margin: 0; font-weight: 400; font-size: clamp(40px, 7vw, 88px); letter-spacing: -0.045em; line-height: 1; }
-.visit {
-  display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 999px;
-  background: var(--ink); color: var(--bg); font-weight: 500; font-size: 15px; white-space: nowrap; transition: transform .3s var(--ease);
-}
-.visit:hover { transform: translateY(-2px); }
-.view .frame { aspect-ratio: 16 / 9; }
-.view .mock { padding: clamp(24px, 6vw, 72px); }
-.facts { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 36px; }
-.facts p { margin: 0; font-size: 18px; line-height: 1.55; max-width: 52ch; }
-.facts dl { margin: 0; }
-.facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-.facts dd { margin: 6px 0 0; font-size: 15px; overflow-wrap: anywhere; }
-.pager { display: flex; justify-content: space-between; gap: 16px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); }
-.pager button { text-align: left; display: grid; gap: 2px; }
-.pager button:last-child { text-align: right; }
-.pager small { color: var(--muted); font-size: 13px; }
-.pager span { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
-.hint { color: var(--muted); font-size: 13px; text-align: center; margin-top: 28px; }
-@media (max-width: 720px) {
-  .vhead { grid-template-columns: minmax(0, 1fr); align-items: start; margin-block: 28px 24px; }
-  .visit { justify-self: start; }
-  .facts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .facts p { grid-column: 1 / -1; font-size: 17px; }
-  .view .frame { aspect-ratio: 4 / 3; }
-  .hint { display: none; }
-}
-
-footer { color: var(--muted); font-size: 13px; padding-block: 0 40px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .slide, .cap { transition: none; }
 }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="top">
-    <a class="word" href="#" data-home>daedalus</a>
-    <span class="count" id="count"></span>
-  </header>
+<header class="edge">
+  <span class="word">daedalus</span>
+  <span class="muted" id="count"></span>
+</header>
 
-  <main>
-    <section class="index">
-      <div class="intro">
-        <h1>Small tools and sites, <span>made with care.</span></h1>
-      </div>
-      <div class="grid">
-        <ul class="list" id="list"></ul>
-        <div class="stage" aria-hidden="true">
-          <div class="frame"><div class="bar"><i></i><i></i><i></i><span id="stage-url"></span></div><div class="screen" id="stage-screen"></div></div>
-          <div class="meta"><span id="stage-kind"></span><span>Click to open</span></div>
-        </div>
-      </div>
-    </section>
+<main class="box" aria-roledescription="carousel" aria-label="daedalus projects">
+  <div class="track" id="track"></div>
+  <p class="cap" id="cap" aria-live="polite"></p>
+</main>
 
-    <section class="view" id="view" aria-live="polite">
-      <a class="back" href="#" data-home>← All projects</a>
-      <div class="vhead">
-        <h2 id="v-name"></h2>
-        <a class="visit" id="v-visit" target="_blank" rel="noopener">Visit site <span aria-hidden="true">↗</span></a>
-      </div>
-      <a class="frame" id="v-frame" target="_blank" rel="noopener" aria-label="Open site"><div class="bar"><i></i><i></i><i></i><span id="v-url"></span></div><div class="screen" id="v-screen"></div></a>
-      <div class="facts">
-        <p id="v-desc"></p>
-        <dl><dt>Type</dt><dd id="v-kind"></dd></dl>
-        <dl><dt>Address</dt><dd id="v-domain"></dd></dl>
-      </div>
-      <nav class="pager">
-        <button id="prev"><small>Previous</small><span id="prev-name"></span></button>
-        <button id="next"><small>Next</small><span id="next-name"></span></button>
-      </nav>
-      <p class="hint">Use ← → to move between projects, Esc to go back.</p>
-    </section>
-  </main>
-
-  <footer><span>daedalus</span><span>© 2026</span></footer>
-</div>
+<footer class="edge muted">
+  <span>made with ❤️ by daedalus</span>
+  <span>© 2026</span>
+</footer>
 
 <script>
-// Add a real screenshot by setting `shot` to an image path, e.g. "shots/calendai.png".
-// Leave `domain` empty for a project that has not launched; it shows as coming soon.
+// One entry per project. Leave `url` empty for one that hasn't launched.
 const PROJECTS = [
-  {
-    id: "calendai", name: "calendAI", domain: "calendai.ca", kind: "Calendar assistant",
-    line: "Turns screenshots and texts into calendar events.",
-    desc: "A private calendar assistant. Send it a screenshot, a text or a forwarded email, and it turns the plan into a clean event with location, weather and departure time filled in. You approve every event before it lands on your calendar.",
-    shot: "",
-    mock: `<div class="mock m-cal"><div><div class="h">Make plans easy, securely.</div><div class="s">Your all-in-one private calendar assistant.</div><div class="ev"><b>Dinner with Sam</b><span>Fri 7:30 PM · Leave by 7:05</span><span class="ok">Add to calendar</span></div></div></div>`
-  },
-  {
-    id: "scrapify", name: "Scrapify", domain: "scrapify-akdm.vercel.app", kind: "Job alerts",
-    line: "LinkedIn job alerts, sent by text.",
-    desc: "LinkedIn job alerts delivered as text messages, so new postings reach you without opening an app. Access is currently behind a password.",
-    shot: "",
-    mock: `<div class="mock m-scrap"><div><div class="t">scrapify<em>_</em></div><div class="f"><span>••••••••</span><b>Enter</b></div></div></div>`
-  },
-  {
-    id: "statusofai", name: "status of ai", domain: "statusofai.vercel.app", kind: "Web app",
-    line: "Ask what AI can do.",
-    desc: "One question, one box. Finish the sentence “can ai …?” and ask.",
-    shot: "",
-    mock: `<div class="mock m-status"><div><div class="q">can ai ?</div><div class="ask"><u></u><b>ask</b></div></div></div>`
-  },
-  {
-    id: "dmphotos", name: "dmphotos", domain: "dmphotos.ca", kind: "Photography portfolio",
-    line: "Photographs by Dhruvil Mehta.",
-    desc: "A photography portfolio for Dhruvil Mehta: a simple grid of photos with nothing in the way of the pictures.",
-    shot: "",
-    mock: `<div class="mock m-photo"><div class="h">dhruvil mehta</div><div class="g"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>`
-  },
-  {
-    id: "washtag", name: "Washtag", domain: "", kind: "In progress",
-    line: "Coming soon.",
-    desc: "The next daedalus project. Details and a link will be here at launch.",
-    shot: "",
-    mock: `<div class="mock m-wash"><div><div class="t">washtag</div><div class="c">Coming soon</div></div></div>`
-  }
+  { id: "calendai", name: "calendAI", url: "https://calendai.ca", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
+  { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", cap: "job alerts, by text", shot: "shots/scrapify.png" },
+  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", cap: "can ai do it yet?", shot: "shots/statusofai.png" },
+  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", cap: "photographs", shot: "shots/dmphotos.png" },
+  { id: "washtag", name: "Washtag", url: "", cap: "coming soon", shot: "" }
 ];
 
-const $ = (id) => document.getElementById(id);
-const list = $("list"), stageScreen = $("stage-screen");
-$("count").textContent = PROJECTS.length + " projects";
+const track = document.getElementById("track"), cap = document.getElementById("cap");
+const n = PROJECTS.length;
+document.getElementById("count").textContent = n + " projects";
 
-function mockFor(p) {
-  const wrap = document.createElement("div");
-  wrap.innerHTML = p.mock;
-  const m = wrap.firstElementChild;
-  m.dataset.id = p.id;
-  if (p.shot) { const img = new Image(); img.className = "shot"; img.alt = ""; img.src = p.shot; img.onerror = () => img.remove(); m.appendChild(img); }
-  return m;
-}
-
-PROJECTS.forEach((p, i) => {
-  const li = document.createElement("li");
-  li.innerHTML = `<a class="row" href="#${p.id}" data-i="${i}"><span><span class="name">${p.name}</span><span class="sub">${p.line}</span></span><span>${p.domain ? "" : '<span class="soon">Soon</span>'}<span class="arrow" aria-hidden="true">→</span></span></a>`;
-  list.appendChild(li);
-  stageScreen.appendChild(mockFor(p));
+const slides = PROJECTS.map((p, i) => {
+  const s = document.createElement("div");
+  s.className = "slide";
+  s.dataset.i = i;
+  const inner = p.url ? document.createElement("a") : document.createElement("div");
+  inner.className = "shot";
+  if (p.url) { inner.href = p.url; inner.target = "_blank"; inner.rel = "noopener"; inner.setAttribute("aria-label", "Open " + p.name); }
+  const ph = () => { inner.innerHTML = `<div class="ph">${p.name.toLowerCase()}</div>`; };
+  if (p.shot) {
+    const img = new Image(); img.alt = p.name; img.src = p.shot; img.draggable = false;
+    img.onerror = ph; inner.appendChild(img);
+  } else ph();
+  s.appendChild(inner);
+  s.addEventListener("click", () => { if (i !== cur) go(i); });
+  track.appendChild(s);
+  return s;
 });
 
-function hover(i) {
-  const p = PROJECTS[i];
-  document.querySelectorAll(".row").forEach((r) => r.classList.toggle("on", +r.dataset.i === i));
-  stageScreen.querySelectorAll(".mock").forEach((m) => m.classList.toggle("show", m.dataset.id === p.id));
-  $("stage-url").textContent = p.domain || "coming soon";
-  $("stage-kind").textContent = p.kind;
+let cur = 0;
+const prevOffset = new Array(n).fill(null);
+function render() {
+  slides.forEach((s, i) => {
+    let d = ((i - cur) % n + n) % n;
+    if (d > n / 2) d -= n;
+    s.classList.toggle("jump", prevOffset[i] !== null && Math.abs(d - prevOffset[i]) > 1);
+    prevOffset[i] = d;
+    s.style.transform = `translateX(calc(${d} * (var(--slide) + var(--gap))))`;
+    s.style.zIndex = 10 - Math.abs(d);
+    s.classList.toggle("on", d === 0);
+    s.setAttribute("aria-hidden", d === 0 ? "false" : "true");
+    s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
+  });
+  const p = PROJECTS[cur];
+  cap.classList.add("fade");
+  setTimeout(() => { cap.innerHTML = `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, 200);
 }
-list.addEventListener("mouseover", (e) => { const r = e.target.closest(".row"); if (r) hover(+r.dataset.i); });
-list.addEventListener("focusin", (e) => { const r = e.target.closest(".row"); if (r) hover(+r.dataset.i); });
-hover(0);
+function go(i) { cur = ((i % n) + n) % n; render(); restart(); }
 
-let current = -1;
-function open(i) {
-  current = (i + PROJECTS.length) % PROJECTS.length;
-  const p = PROJECTS[current], url = p.domain ? "https://" + p.domain : "";
-  const prev = PROJECTS[(current - 1 + PROJECTS.length) % PROJECTS.length];
-  const next = PROJECTS[(current + 1) % PROJECTS.length];
-  $("v-name").textContent = p.name;
-  $("v-desc").textContent = p.desc;
-  $("v-kind").textContent = p.kind;
-  $("v-domain").textContent = p.domain || "Coming soon";
-  $("v-url").textContent = p.domain || "coming soon";
-  $("v-visit").hidden = !url;
-  for (const a of [$("v-visit"), $("v-frame")]) url ? a.setAttribute("href", url) : a.removeAttribute("href");
-  const screen = $("v-screen"); screen.replaceChildren(mockFor(p)); screen.firstElementChild.classList.add("show");
-  $("prev-name").textContent = prev.name; $("next-name").textContent = next.name;
-  document.body.classList.add("detail");
-  document.title = p.name + " · daedalus";
-  window.scrollTo(0, 0);
-}
-function home() {
-  current = -1;
-  document.body.classList.remove("detail");
-  document.title = "Daedalus Projects";
-}
-function route() {
-  const id = location.hash.slice(1);
-  const i = PROJECTS.findIndex((p) => p.id === id);
-  i >= 0 ? open(i) : home();
-}
-function go(i) {
-  const p = PROJECTS[(i + PROJECTS.length) % PROJECTS.length];
-  if (location.hash === "#" + p.id) open(i); else location.hash = p.id;
-}
-$("prev").onclick = () => go(current - 1);
-$("next").onclick = () => go(current + 1);
-document.querySelectorAll("[data-home]").forEach((a) => a.addEventListener("click", (e) => {
-  e.preventDefault(); history.pushState(null, "", location.pathname + location.search); home();
-}));
+// autoplay, paused while hovering or focused inside the lightbox
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let timer = null, held = false;
+function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { cur = (cur + 1) % n; render(); }, 4500); }
+track.addEventListener("mouseenter", () => { held = true; restart(); });
+track.addEventListener("mouseleave", () => { held = false; restart(); });
+document.addEventListener("visibilitychange", () => { held = document.hidden; restart(); });
+
 document.addEventListener("keydown", (e) => {
-  if (current < 0) return;
-  if (e.key === "ArrowRight") go(current + 1);
-  else if (e.key === "ArrowLeft") go(current - 1);
-  else if (e.key === "Escape") { history.pushState(null, "", location.pathname + location.search); home(); }
+  if (e.key === "ArrowRight") go(cur + 1);
+  else if (e.key === "ArrowLeft") go(cur - 1);
 });
-window.addEventListener("hashchange", route);
-route();
+
+// swipe
+let x0 = null, swiped = false;
+track.addEventListener("pointerdown", (e) => { x0 = e.clientX; swiped = false; });
+track.addEventListener("pointerup", (e) => {
+  if (x0 === null) return;
+  const dx = e.clientX - x0; x0 = null;
+  if (Math.abs(dx) > 40) { swiped = true; go(cur + (dx < 0 ? 1 : -1)); }
+});
+track.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+
+render();
+restart();
 </script>
 </body>
 </html>
