@@ -10,7 +10,7 @@ Projects live in the `PROJECTS` array near the bottom of `index.html`: name, url
 
 ## Screenshots
 
-`shots/` holds real screenshots. The Screenshots workflow refreshes the public sites (status of ai, dmphotos in dark mode, Washtag) every Monday; run it from the Actions tab to refresh now. calendAI (History page) and Scrapify (dashboard) need sign-in, so their shots were taken from local copies of each app with a mock account and mock data, and the workflow leaves them alone.
+`shots/` holds real screenshots. The Screenshots workflow refreshes the public sites (status of ai, dmphotos in dark mode, Washtag) every Monday; run it from the Actions tab to refresh now. calendAI (History page, dark mode) and Scrapify (dashboard) need sign-in, so their shots were taken from local copies of each app with a mock account and mock data, and the workflow leaves them alone.
 
 ## Deploy
 
