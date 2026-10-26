@@ -1,12 +1,12 @@
 # daedalus productions
 
-An infinite sliding lightbox of projects by daedalus productions: calendAI, Scrapify, status of ai, dmphotos and Washtag (coming soon).
+An infinite sliding lightbox of projects by daedalus productions: calendAI, Scrapify, status of ai, dmphotos and Washtag.
 
 Plain static HTML, no build step. Set in DM Sans.
 
 ## Edit
 
-Projects live in the `PROJECTS` array near the bottom of `index.html`: name, url, a very short caption and a screenshot path. Leave `url` empty to show a project as coming soon.
+Projects live in the `PROJECTS` array near the bottom of `index.html`: name, url, a very short caption and a screenshot path. Leave `url` empty for a project that has not launched.
 
 ## Screenshots
 
