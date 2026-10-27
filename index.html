@@ -75,7 +75,11 @@ body { isolation: isolate; transition: --glow 1.2s ease; }
   display: block; width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
   background: var(--surface); border: 1px solid var(--line);
   box-shadow: 0 30px 60px -30px rgb(0 0 0 / .25);
+  transition: opacity .9s ease var(--enter-delay, 0s), transform 1s var(--ease) var(--enter-delay, 0s);
 }
+/* entrance: slides start in place but hidden, then rise and fade in from the centre outwards */
+.track:not(.ready) .shot { opacity: 0; transform: translateY(16px) scale(.985); }
+.track:not(.ready) ~ .cap { opacity: 0; }
 .shot img, .shot video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
 .shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
 .slide:not(.on) { opacity: .35; cursor: pointer; }
@@ -97,7 +101,7 @@ body { isolation: isolate; transition: --glow 1.2s ease; }
   .edge { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .slide, .cap { transition: none; }
+  .slide, .cap, .shot { transition: none !important; }
 }
 </style>
 </head>
@@ -122,7 +126,7 @@ body { isolation: isolate; transition: --glow 1.2s ease; }
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
-// `heartDark`, if set, replaces it when the page is in dark mode. `video` is an optional looping clip shown instead of the still.
+// `heartDark`, if set, replaces it when the page is in dark mode. `video` is an optional looping clip shown instead of the still; it plays only while centred.
 const PROJECTS = [
   { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
   { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
@@ -155,7 +159,7 @@ const slides = PROJECTS.map((p, i) => {
   if (p.video) {
     // a short muted loop of the live site; falls back to the still if the clip can't play
     const v = document.createElement("video");
-    Object.assign(v, { muted: true, loop: true, autoplay: true, playsInline: true, poster: p.shot || "" });
+    Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: p.shot || "" });
     v.setAttribute("aria-label", p.name);
     v.src = p.video;
     v.onerror = () => (p.shot ? still() : ph());
@@ -174,11 +178,17 @@ function render() {
   slides.forEach((s, i) => {
     let d = ((i - cur) % n + n) % n;
     if (d > n / 2) d -= n;
-    s.classList.toggle("jump", prevOffset[i] !== null && Math.abs(d - prevOffset[i]) > 1);
+    // first placement and wrap-arounds move instantly, so nothing slides in from a stack on load
+    s.classList.toggle("jump", prevOffset[i] === null || Math.abs(d - prevOffset[i]) > 1);
+    if (prevOffset[i] === null) s.style.setProperty("--enter-delay", `${Math.abs(d) * 0.12}s`);
     prevOffset[i] = d;
     s.style.transform = `translateX(calc(${d} * (var(--slide) + var(--gap))))`;
     s.style.zIndex = 10 - Math.abs(d);
     s.classList.toggle("on", d === 0);
+    // clips play only while their slide is centred, starting from the top each time it arrives
+    const v = s.querySelector("video");
+    if (v && d === 0 && v.paused) { v.currentTime = 0; v.play().catch(() => {}); }
+    else if (v && d !== 0 && !v.paused) v.pause();
     s.setAttribute("aria-hidden", d === 0 ? "false" : "true");
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
@@ -220,6 +230,16 @@ placeGlow();
 darkQuery.addEventListener("change", () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 render();
+// reveal once the slides are in place and the centre image has had a moment to load
+const reveal = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+  track.classList.add("ready");
+  setTimeout(() => slides.forEach((s) => s.style.removeProperty("--enter-delay")), 1600);
+}));
+const firstImg = slides[cur].querySelector("img");
+if (firstImg && !firstImg.complete) {
+  const t = setTimeout(reveal, 600);
+  firstImg.addEventListener("load", () => { clearTimeout(t); reveal(); }, { once: true });
+} else reveal();
 restart();
 </script>
 </body>
