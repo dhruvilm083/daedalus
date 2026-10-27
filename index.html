@@ -42,12 +42,15 @@ body {
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
 
+/* Corner text sits the same distance from the top (or bottom) edge as from the side edge. */
 .edge {
+  --edge: 24px;
   display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
-  padding-block: 28px;
-  padding-left: max(24px, env(safe-area-inset-left, 0px));
-  padding-right: max(24px, env(safe-area-inset-right, 0px));
+  padding-block: var(--edge); line-height: 1;
+  padding-left: max(var(--edge), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--edge), env(safe-area-inset-right, 0px));
 }
+.edge > * { text-box: trim-both cap alphabetic; }
 .word { font-weight: 600; letter-spacing: -0.01em; }
 .muted { color: var(--muted); font-variant-numeric: tabular-nums; }
 
@@ -75,7 +78,7 @@ body.quick { transition-duration: .4s; }
   will-change: transform;
 }
 /* clicks, keys and swipes move about three times faster than the autoplay glide */
-body.quick .slide { transition-duration: .27s; }
+body.quick .slide { transition-duration: .4s; }
 .slide.jump { transition: none; }
 .shot {
   display: block; width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
@@ -105,7 +108,7 @@ body.quick .cap { transition-duration: .15s; }
 
 @media (max-width: 640px) {
   :root { --slide: 84vw; --gap: 12px; }
-  .edge { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .edge { --edge: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .slide, .cap, .shot { transition: none !important; }
