@@ -55,7 +55,8 @@ a { color: inherit; text-decoration: none; }
 /* spotlight in the colour of each site's footer heart; --glow is set per slide from script */
 @property --glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
 /* The glow is one soft oval halo behind the whole page, centred on the slide (--glow-y), so it can spread past the header and footer. */
-body { isolation: isolate; transition: --glow .4s ease; }
+body { isolation: isolate; transition: --glow 1.2s ease; }
+body.quick { transition-duration: .4s; }
 .glow {
   position: fixed; z-index: -1; pointer-events: none;
   left: 50%; top: var(--glow-y, 50%);
@@ -70,9 +71,11 @@ body { isolation: isolate; transition: --glow .4s ease; }
 .slide {
   position: absolute; top: 0; left: 50%; width: var(--slide); height: 100%;
   margin-left: calc(var(--slide) / -2);
-  transition: transform .27s var(--ease), opacity .27s var(--ease);
+  transition: transform .8s var(--ease), opacity .8s var(--ease);
   will-change: transform;
 }
+/* clicks, keys and swipes move about three times faster than the autoplay glide */
+body.quick .slide { transition-duration: .27s; }
 .slide.jump { transition: none; }
 .shot {
   display: block; width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
@@ -91,13 +94,14 @@ body { isolation: isolate; transition: --glow .4s ease; }
 
 .cap {
   margin: 28px auto 0; text-align: center; font-style: italic; font-size: 16px; color: var(--muted);
-  min-height: 1.5em; transition: opacity .15s ease;
+  min-height: 1.5em; transition: opacity .4s ease;
   padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
 }
 .cap b { font-weight: 500; color: var(--ink); }
 .cap a { transition: color .2s; }
 .cap a:hover { color: var(--ink); }
 .cap.fade { opacity: 0; }
+body.quick .cap { transition-duration: .15s; }
 
 @media (max-width: 640px) {
   :root { --slide: 84vw; --gap: 12px; }
@@ -198,14 +202,16 @@ function render() {
   const p = PROJECTS[cur];
   document.body.style.setProperty("--glow", (isDark() && p.heartDark) || p.heart || "transparent");
   cap.classList.add("fade");
-  setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, 70);
+  setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, quick ? 70 : 200);
 }
-function go(i) { cur = ((i % n) + n) % n; render(); restart(); }
+let quick = false;
+const setQuick = (on) => { quick = on; document.body.classList.toggle("quick", on); };
+function go(i) { setQuick(true); cur = ((i % n) + n) % n; render(); restart(); }
 
 // autoplay, paused while hovering or focused inside the lightbox
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let timer = null, held = false;
-function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { cur = (cur + 1) % n; render(); }, 4500); }
+function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { setQuick(false); cur = (cur + 1) % n; render(); }, 4500); }
 track.addEventListener("mouseenter", () => { held = true; restart(); });
 track.addEventListener("mouseleave", () => { held = false; restart(); });
 document.addEventListener("visibilitychange", () => { held = document.hidden; restart(); });
