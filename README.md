@@ -14,6 +14,6 @@ Projects live in the `PROJECTS` array near the bottom of `index.html`: name, url
 
 ## Deploy
 
-Live at https://daedalusproductions.vercel.app
+Live at https://daedalus.productions
 
 Import this repository at vercel.com/new. Framework preset: Other. No build command, output directory is the repo root. Every push to `main` redeploys.
