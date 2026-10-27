@@ -120,14 +120,20 @@ a { color: inherit; text-decoration: none; }
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
+// `heartDark`, if set, replaces it when the page is in dark mode.
 const PROJECTS = [
   { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
   { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#c7ccd6", cap: "job alerts, by text", shot: "shots/scrapify.png" },
   { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png" },
-  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", cap: "photographs", shot: "shots/dmphotos.png" },
+  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", heartDark: "#e8e8e8", cap: "photographs", shot: "shots/dmphotos.png" },
   { id: "washtag", name: "Washtag", url: "https://washtag-green.vercel.app", heart: "#2563eb", cap: "laundry labels, decoded", shot: "shots/washtag.png" }
 ];
 
+const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : darkQuery.matches;
+};
 const box = document.querySelector(".box"), track = document.getElementById("track"), cap = document.getElementById("cap");
 const n = PROJECTS.length;
 document.getElementById("count").textContent = n + " projects";
@@ -165,7 +171,7 @@ function render() {
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
   const p = PROJECTS[cur];
-  box.style.setProperty("--glow", p.heart || "transparent");
+  box.style.setProperty("--glow", (isDark() && p.heartDark) || p.heart || "transparent");
   cap.classList.add("fade");
   setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, 200);
 }
@@ -194,6 +200,8 @@ track.addEventListener("pointerup", (e) => {
 });
 track.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
 
+darkQuery.addEventListener("change", () => render());
+new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 render();
 restart();
 </script>
