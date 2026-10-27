@@ -76,7 +76,7 @@ body { isolation: isolate; transition: --glow 1.2s ease; }
   background: var(--surface); border: 1px solid var(--line);
   box-shadow: 0 30px 60px -30px rgb(0 0 0 / .25);
 }
-.shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
+.shot img, .shot video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
 .shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
 .slide:not(.on) { opacity: .35; cursor: pointer; }
 .slide.on .shot { box-shadow: 0 30px 90px -30px color-mix(in srgb, var(--glow) 55%, rgb(0 0 0 / .25)); }
@@ -122,11 +122,11 @@ body { isolation: isolate; transition: --glow 1.2s ease; }
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
-// `heartDark`, if set, replaces it when the page is in dark mode.
+// `heartDark`, if set, replaces it when the page is in dark mode. `video` is an optional looping clip shown instead of the still.
 const PROJECTS = [
   { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
   { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
-  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png" },
+  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
   { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", heartDark: "#e8e8e8", cap: "photographs", shot: "shots/dmphotos.png" },
   { id: "washtag", name: "Washtag", url: "https://washtag-green.vercel.app", heart: "#2563eb", cap: "laundry labels, decoded", shot: "shots/washtag.png" }
 ];
@@ -148,10 +148,20 @@ const slides = PROJECTS.map((p, i) => {
   inner.className = "shot";
   if (p.url) { inner.href = p.url; inner.target = "_blank"; inner.rel = "noopener"; inner.setAttribute("aria-label", "Open " + p.name); }
   const ph = () => { inner.innerHTML = `<div class="ph">${p.name.toLowerCase()}</div>`; };
-  if (p.shot) {
+  const still = () => {
     const img = new Image(); img.alt = p.name; img.src = p.shot; img.draggable = false;
-    img.onerror = ph; inner.appendChild(img);
-  } else ph();
+    img.onerror = ph; inner.replaceChildren(img);
+  };
+  if (p.video) {
+    // a short muted loop of the live site; falls back to the still if the clip can't play
+    const v = document.createElement("video");
+    Object.assign(v, { muted: true, loop: true, autoplay: true, playsInline: true, poster: p.shot || "" });
+    v.setAttribute("aria-label", p.name);
+    v.src = p.video;
+    v.onerror = () => (p.shot ? still() : ph());
+    inner.appendChild(v);
+  } else if (p.shot) still();
+  else ph();
   s.appendChild(inner);
   s.addEventListener("click", () => { if (i !== cur) go(i); });
   track.appendChild(s);

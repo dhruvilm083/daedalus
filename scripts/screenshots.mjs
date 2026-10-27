@@ -1,11 +1,16 @@
 // Takes a 16:10 screenshot of each public project into shots/<id>.png.
+// Sites with `clip` also get a short looping video, shots/<id>.mp4 (needs ffmpeg).
 // calendAI and Scrapify sit behind sign-in, so their shots are made by hand from a local copy with a mock account.
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { chromium } from "playwright";
 
 const SITES = {
-  statusofai: { url: "https://statusofai.vercel.app" },
+  statusofai: { url: "https://statusofai.vercel.app", clip: 8 },
   dmphotos: { url: "https://dmphotos.ca", dark: true },
-  washtag: { url: "https://washtag-green.vercel.app" },
+  washtag: { url: "https://washtag-green.vercel.app", dark: true },
 };
 
 const isLight = (page) =>
@@ -37,5 +42,28 @@ for (const [id, site] of Object.entries(SITES)) {
     console.log("failed", id, e.message);
   }
   await context.close();
+
+  if (site.clip) {
+    // Record the page as it animates, then trim the load and encode a small mp4 that loops in the showcase.
+    const dir = mkdtempSync(join(tmpdir(), `clip-${id}-`));
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir, size: { width: 1440, height: 900 } } });
+    const page = await ctx.newPage();
+    const started = Date.now();
+    try {
+      await page.goto(site.url, { waitUntil: "networkidle", timeout: 60000 });
+      const lead = (Date.now() - started) / 1000 + 1.5;
+      await page.waitForTimeout(1500 + site.clip * 1000);
+      await ctx.close();
+      const raw = join(dir, readdirSync(dir).find((f) => f.endsWith(".webm")));
+      execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-ss", String(lead), "-i", raw, "-t", String(site.clip),
+        "-vf", "scale=1280:-2,fps=30", "-c:v", "libx264", "-crf", "28", "-preset", "slow", "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart", "-an", `shots/${id}.mp4`]);
+      console.log("ok clip", id);
+    } catch (e) {
+      console.log("failed clip", id, e.message);
+      await ctx.close().catch(() => {});
+    }
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 await browser.close();

@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg || true
       - run: node scripts/screenshots.mjs
       - name: Commit changed screenshots
         run: |
