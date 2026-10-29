@@ -11,6 +11,7 @@ const SITES = {
   statusofai: { url: "https://statusofai.vercel.app", clip: 8 },
   dmphotos: { url: "https://dmphotos.ca", dark: true },
   washtag: { url: "https://washtag-green.vercel.app", dark: true },
+  makeachangehomes: { url: "https://makeachangehomes.ca" },
 };
 
 const isLight = (page) =>
@@ -37,6 +38,12 @@ for (const [id, site] of Object.entries(SITES)) {
     }
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `shots/${id}.png` });
+    const about = await page.evaluate(() => ({
+      title: document.title,
+      description: document.querySelector('meta[name="description"]')?.content ?? "",
+      credit: [...document.querySelectorAll("footer, footer *, body *")].map((e) => e.textContent.trim()).find((t) => /made with/i.test(t) && t.length < 80) ?? "",
+    }));
+    console.log("about", id, JSON.stringify(about));
     console.log("ok", id, site.dark ? `light=${await isLight(page)}` : "");
   } catch (e) {
     console.log("failed", id, e.message);
