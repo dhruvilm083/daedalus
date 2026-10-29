@@ -1,0 +1,20 @@
+{
+  "statusofai": {
+    "title": "status of ai",
+    "description": "",
+    "credit": "© 2026 made with 💛 by daedalus\n    animations"
+  },
+  "dmphotos": {
+    "title": "Photographs - Dhruvil Mehta's Portfolio",
+    "description": "My photos!",
+    "credit": "© All rights reserved\n    made with 🖤 by daedalus"
+  },
+  "washtag": {
+    "title": "Washtag",
+    "description": "Washtag reads laundry care labels and product barcodes and turns them into clear wash, dry and do-not instructions.",
+    "credit": "©2026 made with 💙 by daedalus"
+  },
+  "makeachangehomes": {
+    "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://makeachangehomes.ca/"
+  }
+}
