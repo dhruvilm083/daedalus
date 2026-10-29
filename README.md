@@ -1,12 +1,12 @@
 # daedalus productions
 
-An infinite sliding lightbox of projects by daedalus productions: calendAI, Scrapify, status of ai, dmphotos and Washtag.
+Infinite sliding lightboxes of projects by daedalus productions, on three pages: /software (the home page: calendAI, Scrapify, status of ai, Washtag), /hardware (NATO CUAS, coming soon) and /it (Make a Change Homes, dmphotos).
 
 Plain static HTML, no build step. Set in DM Sans.
 
 ## Edit
 
-Projects live in the `PROJECTS` array near the bottom of `index.html`: name, url, a very short caption and a screenshot path. Leave `url` empty for a project that has not launched.
+Projects live in the `PROJECTS` array near the bottom of `index.html`: page, name, url, a very short caption and a screenshot path. `vercel.json` rewrites /hardware, /software and /it to the same page. Leave `url` empty for a project that has not launched.
 
 ## Screenshots
 

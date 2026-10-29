@@ -52,6 +52,13 @@ a { color: inherit; text-decoration: none; }
 }
 .edge > * { text-box: trim-both cap alphabetic; }
 .word { font-weight: 600; letter-spacing: -0.01em; }
+/* header: name left, pages centred, count right */
+.top { display: grid; grid-template-columns: 1fr auto 1fr; }
+.top #count { justify-self: end; }
+.pages { display: flex; gap: 22px; }
+.pages a { color: var(--muted); transition: color .2s; }
+.pages a:hover, .pages a[aria-current="page"] { color: var(--ink); }
+.pages a[aria-current="page"] { font-weight: 500; }
 .muted { color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* ---------- lightbox ---------- */
@@ -90,7 +97,8 @@ body.quick .slide { transition-duration: .4s; }
 .track:not(.ready) .shot { opacity: 0; transform: translateY(16px) scale(.985); }
 .track:not(.ready) ~ .cap { opacity: 0; }
 .shot img, .shot video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
-.shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
+.shot .ph { width: 100%; height: 100%; display: grid; place-content: center; justify-items: center; gap: 14px; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
+.shot .ph small { font-size: 12px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
 .slide:not(.on) { opacity: .35; cursor: pointer; }
 .slide.on .shot { box-shadow: 0 30px 90px -30px color-mix(in srgb, var(--glow) 55%, rgb(0 0 0 / .25)); }
 .slide:not(.on) .shot { pointer-events: none; }
@@ -109,6 +117,8 @@ body.quick .cap { transition-duration: .15s; }
 @media (max-width: 640px) {
   :root { --slide: 84vw; --gap: 12px; }
   .edge { --edge: 16px; }
+  .top { grid-template-columns: 1fr auto; row-gap: 20px; }
+  .pages { grid-column: 1 / -1; grid-row: 2; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .slide, .cap, .shot { transition: none !important; }
@@ -118,8 +128,9 @@ body.quick .cap { transition-duration: .15s; }
 <body>
 
 <div class="glow" aria-hidden="true"></div>
-<header class="edge">
-  <span class="word">daedalus productions</span>
+<header class="edge top">
+  <a class="word" href="/" data-home>daedalus productions</a>
+  <nav class="pages" id="nav" aria-label="Pages"></nav>
   <span class="muted" id="count"></span>
 </header>
 
@@ -134,34 +145,37 @@ body.quick .cap { transition-duration: .15s; }
 </footer>
 
 <script>
-// One entry per project. Leave `url` empty for one that hasn't launched.
+// One entry per project. `page` puts it on the hardware, software or it page. Leave `url` empty for one that hasn't launched.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
 // `heartDark`, if set, replaces it when the page is in dark mode. `video` is an optional looping clip shown instead of the still; it plays only while centred.
 const PROJECTS = [
-  { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
-  { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
-  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
-  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", heartDark: "#e8e8e8", cap: "photographs", shot: "shots/dmphotos.png" },
-  { id: "washtag", name: "Washtag", url: "https://washtag-green.vercel.app", heart: "#2563eb", cap: "laundry labels, decoded", shot: "shots/washtag.png" }
+  { id: "calendai", page: "software", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
+  { id: "scrapify", page: "software", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
+  { id: "statusofai", page: "software", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
+  { id: "washtag", page: "software", name: "Washtag", url: "https://washtag-green.vercel.app", heart: "#2563eb", cap: "laundry labels, decoded", shot: "shots/washtag.png" },
+  { id: "natocuas", page: "hardware", name: "NATO CUAS", url: "", heart: "#4d7cc7", cap: "coming soon", shot: "" },
+  { id: "makeachangehomes", page: "it", name: "Make a Change Homes", url: "https://makeachangehomes.ca", heart: "#94a3b8", cap: "a website build", shot: "shots/makeachangehomes.png" },
+  { id: "dmphotos", page: "it", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", heartDark: "#e8e8e8", cap: "photographs", shot: "shots/dmphotos.png" }
 ];
+const PAGES = ["hardware", "software", "it"];
+const HOME = "software";
 
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
   return t ? t === "dark" : darkQuery.matches;
 };
-const box = document.querySelector(".box"), track = document.getElementById("track"), cap = document.getElementById("cap");
-const n = PROJECTS.length;
-document.getElementById("count").textContent = n + " projects";
+const track = document.getElementById("track"), cap = document.getElementById("cap"), count = document.getElementById("count");
+const nav = document.getElementById("nav");
 
-const slides = PROJECTS.map((p, i) => {
+function makeSlide(p, i) {
   const s = document.createElement("div");
   s.className = "slide";
   s.dataset.i = i;
   const inner = p.url ? document.createElement("a") : document.createElement("div");
   inner.className = "shot";
   if (p.url) { inner.href = p.url; inner.target = "_blank"; inner.rel = "noopener"; inner.setAttribute("aria-label", "Open " + p.name); }
-  const ph = () => { inner.innerHTML = `<div class="ph">${p.name.toLowerCase()}</div>`; };
+  const ph = () => { inner.innerHTML = `<div class="ph"><span>${p.name.toLowerCase()}</span>${p.url ? "" : "<small>coming soon</small>"}</div>`; };
   const still = () => {
     const img = new Image(); img.alt = p.name; img.src = p.shot; img.draggable = false;
     img.onerror = ph; inner.replaceChildren(img);
@@ -180,10 +194,9 @@ const slides = PROJECTS.map((p, i) => {
   s.addEventListener("click", () => { if (i !== cur) go(i); });
   track.appendChild(s);
   return s;
-});
+}
 
-let cur = 0;
-const prevOffset = new Array(n).fill(null);
+let page = HOME, list = [], slides = [], n = 0, cur = 0, prevOffset = [];
 function render() {
   slides.forEach((s, i) => {
     let d = ((i - cur) % n + n) % n;
@@ -202,19 +215,20 @@ function render() {
     s.setAttribute("aria-hidden", d === 0 ? "false" : "true");
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
-  const p = PROJECTS[cur];
+  const p = list[cur];
+  if (!p) return;
   document.body.style.setProperty("--glow", (isDark() && p.heartDark) || p.heart || "transparent");
   cap.classList.add("fade");
   setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, quick ? 70 : 200);
 }
 let quick = false;
 const setQuick = (on) => { quick = on; document.body.classList.toggle("quick", on); };
-function go(i) { setQuick(true); cur = ((i % n) + n) % n; render(); restart(); }
+function go(i) { if (n < 2) return; setQuick(true); cur = ((i % n) + n) % n; render(); restart(); }
 
 // autoplay, paused while hovering or focused inside the lightbox
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let timer = null, held = false;
-function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { setQuick(false); cur = (cur + 1) % n; render(); }, 4500); }
+function restart() { clearInterval(timer); if (!reduce && !held && n > 1) timer = setInterval(() => { setQuick(false); cur = (cur + 1) % n; render(); }, 4500); }
 track.addEventListener("mouseenter", () => { held = true; restart(); });
 track.addEventListener("mouseleave", () => { held = false; restart(); });
 document.addEventListener("visibilitychange", () => { held = document.hidden; restart(); });
@@ -238,21 +252,76 @@ track.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); e.sto
 const placeGlow = () => { const r = track.getBoundingClientRect(); document.body.style.setProperty("--glow-y", `${r.top + r.height / 2}px`); };
 addEventListener("resize", placeGlow);
 addEventListener("scroll", placeGlow, { passive: true });
-placeGlow();
 darkQuery.addEventListener("change", () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-render();
+
 // reveal once the slides are in place and the centre image has had a moment to load
-const reveal = () => requestAnimationFrame(() => requestAnimationFrame(() => {
-  track.classList.add("ready");
-  setTimeout(() => slides.forEach((s) => s.style.removeProperty("--enter-delay")), 1600);
-}));
-const firstImg = slides[cur].querySelector("img");
-if (firstImg && !firstImg.complete) {
-  const t = setTimeout(reveal, 600);
-  firstImg.addEventListener("load", () => { clearTimeout(t); reveal(); }, { once: true });
-} else reveal();
-restart();
+let revealTimer = null;
+function reveal() {
+  const show = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    track.classList.add("ready");
+    setTimeout(() => slides.forEach((s) => s.style.removeProperty("--enter-delay")), 1600);
+  }));
+  const firstImg = slides[cur]?.querySelector("img");
+  if (firstImg && !firstImg.complete) {
+    revealTimer = setTimeout(show, 600);
+    firstImg.addEventListener("load", () => { clearTimeout(revealTimer); show(); }, { once: true });
+  } else show();
+}
+
+// pages: /hardware, /software, /it (or #hardware … where paths aren't available); the home page is software
+function pageFromUrl() {
+  const seg = location.pathname.split("/").pop().replace(/\.html$/, "");
+  if (PAGES.includes(seg)) return seg;
+  const hash = location.hash.slice(1);
+  return PAGES.includes(hash) ? hash : HOME;
+}
+function build(name) {
+  page = name;
+  const projects = PROJECTS.filter((p) => p.page === name);
+  // with only two projects, show each twice so there's a slide on both sides of the centre
+  list = projects.length === 2 ? projects.concat(projects) : projects;
+  n = list.length; cur = 0;
+  prevOffset = new Array(n).fill(null);
+  track.replaceChildren();
+  slides = list.map(makeSlide);
+  count.textContent = `${projects.length} project${projects.length === 1 ? "" : "s"}`;
+  nav.querySelectorAll("a").forEach((a) => a.setAttribute("aria-current", a.dataset.page === name ? "page" : "false"));
+  document.title = name === HOME ? "Daedalus Productions" : `${name === "it" ? "IT" : name[0].toUpperCase() + name.slice(1)} · Daedalus Productions`;
+  setQuick(false);
+  render();
+  reveal();
+  restart();
+}
+let target = null, switchTimer = null;
+function switchTo(name, push) {
+  if (name === (target ?? page)) return;
+  target = name;
+  if (push) {
+    try { history.pushState(null, "", "/" + name); } catch { location.hash = name; }
+  }
+  track.classList.remove("ready");
+  clearTimeout(revealTimer);
+  clearTimeout(switchTimer);
+  switchTimer = setTimeout(() => { target = null; build(name); }, 260);
+}
+nav.innerHTML = PAGES.map((name) => `<a href="/${name}" data-page="${name}">${name}</a>`).join("");
+nav.addEventListener("click", (e) => {
+  const a = e.target.closest("a");
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  switchTo(a.dataset.page, true);
+});
+document.querySelector("[data-home]").addEventListener("click", (e) => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  if (page !== HOME) { try { history.pushState(null, "", "/"); } catch { location.hash = ""; } switchTo(HOME, false); }
+});
+addEventListener("popstate", () => switchTo(pageFromUrl(), false));
+addEventListener("hashchange", () => switchTo(pageFromUrl(), false));
+
+placeGlow();
+build(pageFromUrl());
 </script>
 </body>
 </html>
