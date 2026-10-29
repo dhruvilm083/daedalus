@@ -2,7 +2,7 @@
 // Sites with `clip` also get a short looping video, shots/<id>.mp4 (needs ffmpeg).
 // calendAI and Scrapify sit behind sign-in, so their shots are made by hand from a local copy with a mock account.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium } from "playwright";
@@ -22,13 +22,15 @@ const isLight = (page) =>
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > 128;
   });
 
+const report = {};
 const browser = await chromium.launch();
 for (const [id, site] of Object.entries(SITES)) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: site.dark ? "dark" : "light" });
   const page = await context.newPage();
   try {
-    await page.goto(site.url, { waitUntil: "networkidle", timeout: 60000 });
-    await page.waitForTimeout(2000);
+    // some sites never go network-idle (analytics, chat widgets), so fall back to the load event
+    await page.goto(site.url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => page.goto(site.url, { waitUntil: "load", timeout: 60000 }));
+    await page.waitForTimeout(2500);
     if (site.dark && (await isLight(page))) {
       // Fall back to the site's own theme button when it ignores the system setting.
       const toggle = page.locator('button[aria-label*="theme" i], button[aria-label*="dark" i], button[title*="theme" i], button[title*="dark" i]').first();
@@ -44,9 +46,11 @@ for (const [id, site] of Object.entries(SITES)) {
       credit: [...document.querySelectorAll("footer, footer *, body *")].map((e) => e.textContent.trim()).find((t) => /made with/i.test(t) && t.length < 80) ?? "",
     }));
     console.log("about", id, JSON.stringify(about));
+    report[id] = about;
     console.log("ok", id, site.dark ? `light=${await isLight(page)}` : "");
   } catch (e) {
     console.log("failed", id, e.message);
+    report[id] = { error: e.message.split("\n")[0] };
   }
   await context.close();
 
@@ -74,3 +78,5 @@ for (const [id, site] of Object.entries(SITES)) {
   }
 }
 await browser.close();
+// what each site's title and footer credit said, and any failures, so they're visible without the Actions logs
+writeFileSync("shots/report.json", JSON.stringify(report, null, 2) + "\n");
