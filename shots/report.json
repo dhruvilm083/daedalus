@@ -15,6 +15,6 @@
     "credit": "©2026 made with 💙 by daedalus"
   },
   "makeachangehomes": {
-    "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://makeachangehomes.ca/"
+    "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://www.makeachangehomes.ca/"
   }
 }
