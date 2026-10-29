@@ -11,7 +11,7 @@ const SITES = {
   statusofai: { url: "https://statusofai.vercel.app", clip: 8 },
   dmphotos: { url: "https://dmphotos.ca", dark: true },
   washtag: { url: "https://washtag-green.vercel.app", dark: true },
-  makeachangehomes: { url: "https://makeachangehomes.ca" },
+  makeachangehomes: { url: "https://www.makeachangehomes.ca" },
 };
 
 const isLight = (page) =>
