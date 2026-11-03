@@ -57,8 +57,10 @@ a { color: inherit; text-decoration: none; }
 /* ---------- lightbox ---------- */
 /* spotlight in the colour of each site's footer heart; --glow is set per slide from script */
 @property --glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glow2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glow3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
 /* The glow is one soft oval halo behind the whole page, centred on the slide (--glow-y), so it can spread past the header and footer. */
-body { isolation: isolate; transition: --glow 1.2s ease; }
+body { isolation: isolate; transition: --glow 1.2s ease, --glow2 1.2s ease, --glow3 1.2s ease; }
 body.quick { transition-duration: .4s; }
 .glow {
   position: fixed; z-index: -1; pointer-events: none;
@@ -66,7 +68,11 @@ body.quick { transition-duration: .4s; }
   width: calc(var(--slide) * 1.3); height: calc(var(--slide) * 10 / 16 * 1.45);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--glow) calc(var(--glow-strength) * 1.1), transparent);
+  /* bottom to top: --glow, --glow2, --glow3 (all the same colour unless a project gives a gradient) */
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--glow) calc(var(--glow-strength) * 1.1), transparent) 15%,
+    color-mix(in srgb, var(--glow2) calc(var(--glow-strength) * 1.1), transparent) 50%,
+    color-mix(in srgb, var(--glow3) calc(var(--glow-strength) * 1.1), transparent) 85%);
   filter: blur(clamp(60px, 9vw, 140px));
 }
 .box { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding-block: 24px; min-height: 0; }
@@ -136,15 +142,16 @@ body.quick .cap { transition-duration: .15s; }
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
+// `heart` can also be a list of up to three colours, bottom to top, for a gradient glow.
 // `heartDark`, if set, replaces it when the page is in dark mode. `video` is an optional looping clip shown instead of the still; it plays only while centred.
 const PROJECTS = [
   { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
   { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
   { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
   { id: "washtag", name: "Washtag", url: "https://washtag.app", heart: "#2563eb", cap: "laundry day, planned", shot: "shots/washtag.png" },
-  { id: "natocuas", name: "NATO CUAS", url: "https://nato-cuas.vercel.app", heart: "#ff4f1a", cap: "drone tracking, mapped", shot: "shots/natocuas.png" },
-  { id: "makeachangehomes", name: "Make a Change Homes", url: "https://makeachangehomes.ca", heart: "#94a3b8", cap: "a website build", shot: "shots/makeachangehomes.png" },
-  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: "#000000", heartDark: "#e8e8e8", cap: "photographs", shot: "shots/dmphotos.png" }
+  { id: "natocuas", name: "NATO CUAS", url: "https://nato-cuas.vercel.app", heart: ["#dc2626", "#f97316", "#fbbf24"], cap: "drone tracking, mapped", shot: "shots/natocuas.png" },
+  { id: "makeachangehomes", name: "Make a Change Homes", url: "https://makeachangehomes.ca", heart: "#c9ced6", heartDark: "#ffffff", cap: "a website build", shot: "shots/makeachangehomes.png" },
+  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: ["#000000", "#1f2430", "#4b5563"], heartDark: ["#232833", "#566074", "#a4adbf"], cap: "photographs", shot: "shots/dmphotos.png" }
 ];
 
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
@@ -205,7 +212,8 @@ function render() {
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
   const p = PROJECTS[cur];
-  document.body.style.setProperty("--glow", (isDark() && p.heartDark) || p.heart || "transparent");
+  const h = [].concat((isDark() && p.heartDark) || p.heart || "transparent");
+  ["--glow", "--glow2", "--glow3"].forEach((v, k) => document.body.style.setProperty(v, h[Math.min(k, h.length - 1)]));
   cap.classList.add("fade");
   setTimeout(() => { cap.innerHTML = p.url ? `<a href="${p.url}" target="_blank" rel="noopener"><b>${p.name}</b>, ${p.cap} ↗</a>` : `<b>${p.name}</b>, ${p.cap}`; cap.classList.remove("fade"); }, quick ? 70 : 200);
 }
