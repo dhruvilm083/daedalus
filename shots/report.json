@@ -11,8 +11,13 @@
   },
   "washtag": {
     "title": "Washtag",
-    "description": "Washtag reads laundry care labels and product barcodes and turns them into clear wash, dry and do-not instructions.",
+    "description": "Washtag is a laundry planner for iPhone. It sorts the basket into batches and tells you what goes in the washer and dryer, and when, for your own machines, including washer-dryer combos.",
     "credit": "©2026 made with 💙 by daedalus"
+  },
+  "natocuas": {
+    "title": "cuas_",
+    "description": "",
+    "credit": ""
   },
   "makeachangehomes": {
     "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://makeachangehomes.ca/"
