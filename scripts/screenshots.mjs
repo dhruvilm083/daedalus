@@ -1,6 +1,7 @@
 // Takes a 16:10 screenshot of each public project into shots/<id>.png.
 // Sites with `clip` also get a short looping video, shots/<id>.mp4 (needs ffmpeg).
 // calendAI and Scrapify sit behind sign-in, so their shots are made by hand from a local copy with a mock account.
+// NATO CUAS needs a data folder, so it is fed a made-up one from scripts/fake-cuas.mjs and caught mid-replay.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,7 +11,8 @@ import { chromium } from "playwright";
 const SITES = {
   statusofai: { url: "https://statusofai.vercel.app", clip: 8 },
   dmphotos: { url: "https://dmphotos.ca", dark: true },
-  washtag: { url: "https://washtag-green.vercel.app", dark: true },
+  washtag: { url: "https://washtag.app", dark: true },
+  natocuas: { url: "https://nato-cuas.vercel.app", fakeData: true },
   makeachangehomes: { url: "https://makeachangehomes.ca" },
 };
 
@@ -37,6 +39,17 @@ for (const [id, site] of Object.entries(SITES)) {
       if (await toggle.count()) await toggle.click();
       else await page.locator("button").last().click();
       await page.waitForTimeout(1500);
+    }
+    if (site.fakeData) {
+      const dir = join(mkdtempSync(join(tmpdir(), "cuas-")), "FAKE-CUAS-DataChallenge");
+      execFileSync("node", ["scripts/fake-cuas.mjs", dir]);
+      await page.locator("input[type=file]").first().setInputFiles(dir);
+      const range = page.locator("input[type=range]").first();
+      await range.waitFor({ state: "attached", timeout: 60000 });
+      // jump to just under halfway, where all three fake drones are in view
+      const t = await range.evaluate((el) => String(Math.round((+el.min + (+el.max - +el.min) * 0.45) / 100) * 100));
+      await range.fill(t);
+      await page.waitForTimeout(8000); // basemap tiles
     }
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `shots/${id}.png` });
