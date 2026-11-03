@@ -20,6 +20,8 @@
     "credit": ""
   },
   "makeachangehomes": {
-    "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://makeachangehomes.ca/"
+    "title": "Make A Change Homes",
+    "description": "",
+    "credit": "© 2026 Make A Change Homes. All rights reserved. Made with 🤍 by daedalus"
   }
 }
