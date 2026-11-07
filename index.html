@@ -64,7 +64,8 @@ a { color: inherit; text-decoration: none; }
 }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--green); text-decoration-color: var(--green); }
-.track.swap .shot { transition-duration: .25s; transition-delay: 0s; }
+.track.swap .shot { transition-duration: .12s; transition-delay: 0s; }
+.track.fast .shot { transition-duration: .35s, .45s; }
 
 /* ---------- lightbox ---------- */
 /* spotlight in the colour of each site's footer heart; --glow is set per slide from script */
@@ -110,6 +111,7 @@ body.quick .slide { transition-duration: .4s; }
 .shot img, .shot video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; pointer-events: none; }
 .shot .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(24px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; }
 .slide:not(.on) { opacity: .35; cursor: pointer; }
+.slide.far { opacity: 0; pointer-events: none; }
 .slide.on .shot { box-shadow: 0 30px 90px -30px color-mix(in srgb, var(--glow) 55%, rgb(0 0 0 / .25)); }
 .slide:not(.on) .shot { pointer-events: none; }
 
@@ -189,9 +191,11 @@ function makeSlide(p, i) {
     img.onerror = ph; inner.replaceChildren(img);
   };
   if (p.video) {
+    // an intro clip has no poster: the still is its last frame, so showing it first would spoil the opening
     // a short muted clip of the live site; falls back to the still if the clip can't play
     const v = document.createElement("video");
-    Object.assign(v, { muted: true, loop: !p.intro, playsInline: true, preload: "auto", poster: p.shot || "" });
+    Object.assign(v, { muted: true, loop: !p.intro, playsInline: true, preload: "auto" });
+    if (p.shot && !p.intro) v.poster = p.shot;
     v.setAttribute("aria-label", p.name);
     v.src = p.video;
     v.onerror = () => (p.shot ? still() : ph());
@@ -204,13 +208,16 @@ function makeSlide(p, i) {
 }
 
 // the projects under the selected tab, and their slides
-let list = [], slides = [], n = 0, prevOffset = [];
+let list = [], slides = [], n = 0, m = 0, prevOffset = [];
 function build(kind) {
   list = PROJECTS.filter((p) => p.kind === kind);
   n = list.length;
-  slides = list.map(makeSlide);
+  // the ring repeats the set until it has at least 7 slides, so slides wrap around well off screen
+  // (with only 3 or 4 a slide had to jump from one visible side to the other: the ghost)
+  m = n * Math.ceil(7 / n);
+  slides = Array.from({ length: m }, (_, i) => makeSlide(list[i % n], i));
   track.replaceChildren(...slides);
-  prevOffset = new Array(n).fill(null);
+  prevOffset = new Array(m).fill(null);
   cur = 0;
   count.textContent = n + (kind === "tool" ? " tools" : " pages");
   tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.kind === kind)));
@@ -219,23 +226,28 @@ function build(kind) {
 let cur = 0;
 function render() {
   slides.forEach((s, i) => {
-    let d = ((i - cur) % n + n) % n;
-    if (d > n / 2) d -= n;
+    let d = ((i - cur) % m + m) % m;
+    if (d > m / 2) d -= m;
     // first placement and wrap-arounds move instantly, so nothing slides in from a stack on load
     s.classList.toggle("jump", prevOffset[i] === null || Math.abs(d - prevOffset[i]) > 1);
-    if (prevOffset[i] === null) s.style.setProperty("--enter-delay", `${Math.abs(d) * 0.12}s`);
+    if (prevOffset[i] === null) s.style.setProperty("--enter-delay", `${Math.abs(d) * (track.classList.contains("fast") ? 0.04 : 0.12)}s`);
     prevOffset[i] = d;
     s.style.transform = `translateX(calc(${d} * (var(--slide) + var(--gap))))`;
     s.style.zIndex = 10 - Math.abs(d);
+    s.classList.toggle("far", Math.abs(d) > 1);
     s.classList.toggle("on", d === 0);
     // clips play only while their slide is centred, starting from the top each time it arrives
     const v = s.querySelector("video");
     if (v && d === 0 && v.paused) { v.currentTime = 0; v.play().catch(() => {}); }
-    else if (v && d !== 0 && !v.paused) v.pause();
+    else if (v && d !== 0) {
+      if (!v.paused) v.pause();
+      // an intro waits at its first frame off-centre, so it never flashes the finished logo before replaying
+      if (v.loop === false && v.currentTime > 0) v.currentTime = 0;
+    }
     s.setAttribute("aria-hidden", d === 0 ? "false" : "true");
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
-  const p = list[cur];
+  const p = list[cur % n];
   const h = [].concat(p.heart || "transparent");
   ["--glow", "--glow2", "--glow3"].forEach((v, k) => document.body.style.setProperty(v, h[Math.min(k, h.length - 1)]));
   cap.classList.add("fade");
@@ -243,17 +255,22 @@ function render() {
 }
 let quick = false;
 const setQuick = (on) => { quick = on; document.body.classList.toggle("quick", on); };
-function go(i) { setQuick(true); cur = ((i % n) + n) % n; render(); restart(); }
+function go(i) { setQuick(true); cur = ((i % m) + m) % m; render(); restart(); }
 
 // autoplay, paused while hovering or focused inside the lightbox
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let timer = null, held = false;
-function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { setQuick(false); cur = (cur + 1) % n; render(); }, 4500); }
+function restart() { clearInterval(timer); if (!reduce && !held) timer = setInterval(() => { setQuick(false); cur = (cur + 1) % m; render(); }, 4500); }
 track.addEventListener("mouseenter", () => { held = true; restart(); });
 track.addEventListener("mouseleave", () => { held = false; restart(); });
 document.addEventListener("visibilitychange", () => { held = document.hidden; restart(); });
 
+// holding an arrow key steps at most every 160ms, so each slide can keep up
+let lastKey = 0;
 document.addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.repeat && performance.now() - lastKey < 160) return;
+  lastKey = performance.now();
   if (e.key === "ArrowRight") go(cur + 1);
   else if (e.key === "ArrowLeft") go(cur - 1);
 });
@@ -278,7 +295,7 @@ placeGlow();
 const reveal = () => requestAnimationFrame(() => requestAnimationFrame(() => {
   track.classList.remove("swap");
   track.classList.add("ready");
-  setTimeout(() => slides.forEach((s) => s.style.removeProperty("--enter-delay")), 1600);
+  setTimeout(() => { track.classList.remove("fast"); slides.forEach((s) => s.style.removeProperty("--enter-delay")); }, 1600);
 }));
 function show(kind) {
   build(kind);
@@ -286,7 +303,7 @@ function show(kind) {
   render();
   const img = slides[cur].querySelector("img");
   if (img && !img.complete) {
-    const t = setTimeout(reveal, 600);
+    const t = setTimeout(reveal, track.classList.contains("fast") ? 250 : 600);
     img.addEventListener("load", () => { clearTimeout(t); reveal(); }, { once: true });
   } else reveal();
   restart();
@@ -300,11 +317,13 @@ tabs.forEach((t) => t.addEventListener("click", () => {
   history.replaceState(null, "", kind === "page" ? "#pages" : "#tools");
   tabs.forEach((b) => b.setAttribute("aria-selected", String(b === t)));
   clearTimeout(switching);
-  track.classList.add("swap");
+  track.classList.add("swap", "fast");
   track.classList.remove("ready");
-  switching = setTimeout(() => show(kind), reduce ? 0 : 260);
+  switching = setTimeout(() => show(kind), reduce ? 0 : 120);
 }));
 show(kind);
+// warm the other tab's stills so switching never waits on a download
+addEventListener("load", () => PROJECTS.forEach((p) => { if (p.shot) new Image().src = p.shot; }));
 </script>
 </body>
 </html>
