@@ -1,5 +1,6 @@
 // Takes a 16:10 screenshot of each public project into shots/<id>.png.
 // Sites with `clip` also get a short looping video, shots/<id>.mp4 (needs ffmpeg).
+// With `intro`, the clip starts at first paint instead of after load, to catch the site's opening animation.
 // calendAI and Scrapify sit behind sign-in, so their shots are made by hand from a local copy with a mock account.
 // NATO CUAS needs a data folder, so it is fed a made-up one from scripts/fake-cuas.mjs and caught mid-replay.
 import { execFileSync } from "node:child_process";
@@ -13,7 +14,7 @@ const SITES = {
   dmphotos: { url: "https://dmphotos.ca", dark: true },
   washtag: { url: "https://washtag.app", dark: true },
   natocuas: { url: "https://nato-cuas.vercel.app", fakeData: true },
-  makeachangehomes: { url: "https://makeachangehomes.ca" },
+  makeachangehomes: { url: "https://makeachangehomes.ca", clip: 4.5, intro: true },
 };
 
 const isLight = (page) =>
@@ -33,6 +34,8 @@ for (const [id, site] of Object.entries(SITES)) {
     // some sites never go network-idle (analytics, chat widgets), so fall back to the load event
     await page.goto(site.url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => page.goto(site.url, { waitUntil: "load", timeout: 60000 }));
     await page.waitForTimeout(2500);
+    // let an opening animation finish before the still is taken
+    if (site.intro) await page.waitForTimeout(site.clip * 1000);
     if (site.dark && (await isLight(page))) {
       // Fall back to the site's own theme button when it ignores the system setting.
       const toggle = page.locator('button[aria-label*="theme" i], button[aria-label*="dark" i], button[title*="theme" i], button[title*="dark" i]').first();
@@ -74,8 +77,16 @@ for (const [id, site] of Object.entries(SITES)) {
     const page = await ctx.newPage();
     const started = Date.now();
     try {
-      await page.goto(site.url, { waitUntil: "networkidle", timeout: 60000 });
-      const lead = (Date.now() - started) / 1000 + 1.5;
+      let lead;
+      if (site.intro) {
+        // start the clip at first paint, so it opens on the site's own load animation
+        await page.goto(site.url, { waitUntil: "commit", timeout: 60000 });
+        await page.waitForFunction(() => document.body && document.body.children.length > 0, null, { timeout: 30000, polling: 20 });
+        lead = (Date.now() - started) / 1000;
+      } else {
+        await page.goto(site.url, { waitUntil: "networkidle", timeout: 60000 });
+        lead = (Date.now() - started) / 1000 + 1.5;
+      }
       await page.waitForTimeout(1500 + site.clip * 1000);
       await ctx.close();
       const raw = join(dir, readdirSync(dir).find((f) => f.endsWith(".webm")));

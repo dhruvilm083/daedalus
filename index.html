@@ -27,7 +27,8 @@
   --line: #26272b;
   --font: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.65,0,.2,1);
-  --slide: min(72vw, 1000px, calc((100vh - 280px) * 1.6));
+  --slide: min(72vw, 1000px, calc((100vh - 330px) * 1.6));
+  --green: #4ade80;
   --gap: clamp(16px, 3vw, 40px);
   --glow-strength: 20%;
 }
@@ -53,6 +54,17 @@ a { color: inherit; text-decoration: none; }
 .edge > * { text-box: trim-both cap alphabetic; }
 .word { font-weight: 600; letter-spacing: -0.01em; }
 .muted { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---------- tools | pages ---------- */
+.tabs { display: flex; justify-content: center; gap: 28px; margin: 0 0 28px; }
+.tabs button {
+  font: inherit; font-size: 16px; font-weight: 500; color: var(--muted); background: none; border: 0; padding: 4px 2px; cursor: pointer;
+  text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1.5px; text-underline-offset: 7px;
+  transition: color .25s, text-decoration-color .25s;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { color: var(--green); text-decoration-color: var(--green); }
+.track.swap .shot { transition-duration: .25s; transition-delay: 0s; }
 
 /* ---------- lightbox ---------- */
 /* spotlight in the colour of each site's footer heart; --glow is set per slide from script */
@@ -130,6 +142,10 @@ body.quick .cap { transition-duration: .15s; }
 </header>
 
 <main class="box" aria-roledescription="carousel" aria-label="daedalus productions projects">
+  <nav class="tabs" role="tablist" aria-label="Project type">
+    <button role="tab" id="tab-tools" data-kind="tool" aria-selected="true">tools</button>
+    <button role="tab" id="tab-pages" data-kind="page" aria-selected="false">pages</button>
+  </nav>
   <div class="track" id="track"></div>
   <p class="cap" id="cap" aria-live="polite"></p>
 </main>
@@ -141,24 +157,26 @@ body.quick .cap { transition-duration: .15s; }
 
 <script>
 // One entry per project. Leave `url` empty for one that hasn't launched.
+// `kind` is "tool" or "page": which tab it sits under.
 // `heart` is the colour of the heart in that site's footer; it tints the spotlight behind its slide.
 // `heart` can also be a list of up to three colours, bottom to top, for a gradient glow.
 // `video` is an optional looping clip shown instead of the still; it plays only while centred.
+// `intro` makes the clip play once from the top each time the slide arrives (a site's opening animation) instead of looping.
 const PROJECTS = [
-  { id: "calendai", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
-  { id: "scrapify", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
-  { id: "statusofai", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
-  { id: "washtag", name: "Washtag", url: "https://washtag.app", heart: "#2563eb", cap: "laundry day, planned", shot: "shots/washtag.png" },
-  { id: "natocuas", name: "NATO CUAS", url: "https://nato-cuas.vercel.app", heart: ["#dc2626", "#f97316", "#fbbf24"], cap: "drone tracking, mapped", shot: "shots/natocuas.png" },
-  { id: "makeachangehomes", name: "Make a Change Homes", url: "https://makeachangehomes.ca", heart: "#ffffff", cap: "a website build", shot: "shots/makeachangehomes.png" },
-  { id: "dmphotos", name: "dmphotos", url: "https://dmphotos.ca", heart: ["#232833", "#566074", "#a4adbf"], cap: "photographs", shot: "shots/dmphotos.png" }
+  { id: "calendai", kind: "tool", name: "calendAI", url: "https://calendai.ca", heart: "#a855f7", cap: "plans, from a screenshot", shot: "shots/calendai.png" },
+  { id: "scrapify", kind: "tool", name: "Scrapify", url: "https://scrapify-akdm.vercel.app", heart: "#4ade80", cap: "job alerts, by text", shot: "shots/scrapify.png" },
+  { id: "washtag", kind: "tool", name: "Washtag", url: "https://washtag.app", heart: "#2563eb", cap: "laundry day, planned", shot: "shots/washtag.png" },
+  { id: "natocuas", kind: "tool", name: "NATO CUAS", url: "https://nato-cuas.vercel.app", heart: ["#dc2626", "#f97316", "#fbbf24"], cap: "drone tracking, mapped", shot: "shots/natocuas.png" },
+  { id: "makeachangehomes", kind: "page", name: "Make a Change Homes", url: "https://makeachangehomes.ca", heart: "#ffffff", cap: "a website build", shot: "shots/makeachangehomes.png", video: "shots/makeachangehomes.mp4", intro: true },
+  { id: "statusofai", kind: "page", name: "status of ai", url: "https://statusofai.vercel.app", heart: "#facc15", cap: "can ai do it yet?", shot: "shots/statusofai.png", video: "shots/statusofai.mp4" },
+  { id: "dmphotos", kind: "page", name: "dmphotos", url: "https://dmphotos.ca", heart: ["#232833", "#566074", "#a4adbf"], cap: "photographs", shot: "shots/dmphotos.png" }
 ];
 
 const box = document.querySelector(".box"), track = document.getElementById("track"), cap = document.getElementById("cap");
-const n = PROJECTS.length;
-document.getElementById("count").textContent = n + " projects";
+const tabs = [...document.querySelectorAll(".tabs button")];
+const count = document.getElementById("count");
 
-const slides = PROJECTS.map((p, i) => {
+function makeSlide(p, i) {
   const s = document.createElement("div");
   s.className = "slide";
   s.dataset.i = i;
@@ -171,9 +189,9 @@ const slides = PROJECTS.map((p, i) => {
     img.onerror = ph; inner.replaceChildren(img);
   };
   if (p.video) {
-    // a short muted loop of the live site; falls back to the still if the clip can't play
+    // a short muted clip of the live site; falls back to the still if the clip can't play
     const v = document.createElement("video");
-    Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: p.shot || "" });
+    Object.assign(v, { muted: true, loop: !p.intro, playsInline: true, preload: "auto", poster: p.shot || "" });
     v.setAttribute("aria-label", p.name);
     v.src = p.video;
     v.onerror = () => (p.shot ? still() : ph());
@@ -182,12 +200,23 @@ const slides = PROJECTS.map((p, i) => {
   else ph();
   s.appendChild(inner);
   s.addEventListener("click", () => { if (i !== cur) go(i); });
-  track.appendChild(s);
   return s;
-});
+}
+
+// the projects under the selected tab, and their slides
+let list = [], slides = [], n = 0, prevOffset = [];
+function build(kind) {
+  list = PROJECTS.filter((p) => p.kind === kind);
+  n = list.length;
+  slides = list.map(makeSlide);
+  track.replaceChildren(...slides);
+  prevOffset = new Array(n).fill(null);
+  cur = 0;
+  count.textContent = n + (kind === "tool" ? " tools" : " pages");
+  tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.kind === kind)));
+}
 
 let cur = 0;
-const prevOffset = new Array(n).fill(null);
 function render() {
   slides.forEach((s, i) => {
     let d = ((i - cur) % n + n) % n;
@@ -206,7 +235,7 @@ function render() {
     s.setAttribute("aria-hidden", d === 0 ? "false" : "true");
     s.querySelector("a")?.setAttribute("tabindex", d === 0 ? "0" : "-1");
   });
-  const p = PROJECTS[cur];
+  const p = list[cur];
   const h = [].concat(p.heart || "transparent");
   ["--glow", "--glow2", "--glow3"].forEach((v, k) => document.body.style.setProperty(v, h[Math.min(k, h.length - 1)]));
   cap.classList.add("fade");
@@ -244,18 +273,38 @@ const placeGlow = () => { const r = track.getBoundingClientRect(); document.body
 addEventListener("resize", placeGlow);
 addEventListener("scroll", placeGlow, { passive: true });
 placeGlow();
-render();
+
 // reveal once the slides are in place and the centre image has had a moment to load
 const reveal = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+  track.classList.remove("swap");
   track.classList.add("ready");
   setTimeout(() => slides.forEach((s) => s.style.removeProperty("--enter-delay")), 1600);
 }));
-const firstImg = slides[cur].querySelector("img");
-if (firstImg && !firstImg.complete) {
-  const t = setTimeout(reveal, 600);
-  firstImg.addEventListener("load", () => { clearTimeout(t); reveal(); }, { once: true });
-} else reveal();
-restart();
+function show(kind) {
+  build(kind);
+  setQuick(true);
+  render();
+  const img = slides[cur].querySelector("img");
+  if (img && !img.complete) {
+    const t = setTimeout(reveal, 600);
+    img.addEventListener("load", () => { clearTimeout(t); reveal(); }, { once: true });
+  } else reveal();
+  restart();
+}
+
+// tools | pages: the old slides sink away quickly, then the new set rises in from the centre like on load
+let kind = location.hash === "#pages" ? "page" : "tool", switching = null;
+tabs.forEach((t) => t.addEventListener("click", () => {
+  if (t.dataset.kind === kind) return;
+  kind = t.dataset.kind;
+  history.replaceState(null, "", kind === "page" ? "#pages" : "#tools");
+  tabs.forEach((b) => b.setAttribute("aria-selected", String(b === t)));
+  clearTimeout(switching);
+  track.classList.add("swap");
+  track.classList.remove("ready");
+  switching = setTimeout(() => show(kind), reduce ? 0 : 260);
+}));
+show(kind);
 </script>
 </body>
 </html>
