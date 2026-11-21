@@ -27,6 +27,7 @@
   --line: #26272b;
   --font: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.65,0,.2,1);
+  --snap: cubic-bezier(.2,.9,.25,1);
   --slide: min(72vw, 1000px, calc((100vh - 330px) * 1.6));
   --green: #4ade80;
   --gap: clamp(16px, 3vw, 40px);
@@ -63,6 +64,9 @@ a { color: inherit; text-decoration: none; }
   transition: color .25s, text-decoration-color .25s;
 }
 .tabs button:hover { color: var(--ink); }
+/* no ring around the tabs; keyboard focus just brightens the label */
+.tabs button:focus, .tabs button:focus-visible { outline: none; }
+.tabs button:focus-visible:not([aria-selected="true"]) { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--green); text-decoration-color: var(--green); }
 .track.swap .shot { transition-duration: .12s; transition-delay: 0s; }
 .track.fast .shot { transition-duration: .35s, .45s; }
@@ -93,11 +97,11 @@ body.quick { transition-duration: .4s; }
 .slide {
   position: absolute; top: 0; left: 50%; width: var(--slide); height: 100%;
   margin-left: calc(var(--slide) / -2);
-  transition: transform .8s var(--ease), opacity .8s var(--ease);
+  transition: transform .5s var(--snap), opacity .5s var(--snap);
   will-change: transform;
 }
-/* clicks, keys and swipes move about three times faster than the autoplay glide */
-body.quick .slide { transition-duration: .4s; }
+/* clicks, keys and swipes move faster than the autoplay glide */
+body.quick .slide { transition-duration: .28s; }
 .slide.jump { transition: none; }
 .shot {
   display: block; width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
