@@ -66,8 +66,14 @@ for (const [id, site] of Object.entries(SITES)) {
         if (!el) el = [...document.querySelectorAll("body *")].find((e) => [...e.childNodes].some((n) => n.nodeType === 3 && re.test(n.textContent)) && !e.closest("nav, header, a, button"));
         if (!el) return { ok: false, url: location.href, headings: [...document.querySelectorAll("h1,h2,h3,h4,[id]")].slice(0, 40).map((e) => e.tagName + "#" + e.id + ":" + e.textContent.trim().slice(0, 40)) };
         const sec = el.closest("section") || el;
-        window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY, behavior: "instant" });
-        return { ok: true, tag: sec.tagName, id: sec.id };
+        // centre the section's content (not its padding) in the space below the sticky nav, so the gaps above and below match
+        const nav = [...document.querySelectorAll("header, nav")].find((n) => ["fixed", "sticky"].includes(getComputedStyle(n).position));
+        const navH = nav ? nav.getBoundingClientRect().height : 0;
+        const rects = [...sec.querySelectorAll("*")].map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.height);
+        const top = Math.min(...rects.map((r) => r.top)) + window.scrollY, bottom = Math.max(...rects.map((r) => r.bottom)) + window.scrollY;
+        const gap = (innerHeight - navH - (bottom - top)) / 2;
+        window.scrollTo({ top: top - navH - gap, behavior: "instant" });
+        return { ok: true, tag: sec.tagName, id: sec.id, navH, height: bottom - top, gap };
       }, site.section.source);
       console.log("section", id, JSON.stringify(found));
       await page.waitForTimeout(2500);
