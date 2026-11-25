@@ -25,7 +25,9 @@
     "credit": "© 2026 Make A Change Homes. All rights reserved.Made with 🤍 by daedalus"
   },
   "atlas": {
-    "error": "locator.evaluate: Timeout 30000ms exceeded."
+    "title": "Atlas · Chauffeur service across the GTHA",
+    "description": "Chauffeur service across the Greater Toronto and Hamilton Area. One request goes to vetted, licensed operators, their quotes come back within 48 hours, and a concierge handles the rest.",
+    "credit": "© 2026 Atlas. All rights reserved.made with  by daedalus"
   },
   "kadconsulting": {
     "title": "Calgary CPA Firm for Accounting & Tax | KAD Consulting",
