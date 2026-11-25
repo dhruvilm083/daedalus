@@ -2,6 +2,7 @@
 // Sites with `clip` also get a short looping video, shots/<id>.mp4 (needs ffmpeg).
 // With `intro`, the clip starts at first paint instead of after load, to catch the site's opening animation.
 // calendAI and Scrapify sit behind sign-in, so their shots are made by hand from a local copy with a mock account.
+// Atlas is shot at its "How it works" section rather than the top of the page.
 // NATO CUAS needs a data folder, so it is fed a made-up one from scripts/fake-cuas.mjs and caught mid-replay.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -15,6 +16,8 @@ const SITES = {
   washtag: { url: "https://washtag.app", dark: true },
   natocuas: { url: "https://nato-cuas.vercel.app", fakeData: true },
   makeachangehomes: { url: "https://makeachangehomes.ca", clip: 4.5, intro: true },
+  atlas: { url: "https://atlas-pgcharters.vercel.app", section: /how it works/i },
+  kadconsulting: { url: "https://kadconsultingservices.com" },
 };
 
 const isLight = (page) =>
@@ -53,6 +56,15 @@ for (const [id, site] of Object.entries(SITES)) {
       const t = await range.evaluate((el) => String(Math.round((+el.min + (+el.max - +el.min) * 0.45) / 100) * 100));
       await range.fill(t);
       await page.waitForTimeout(8000); // basemap tiles
+    }
+    if (site.section) {
+      // bring that section's heading to the top of the frame, then let any scroll-in animations play
+      const heading = page.locator("h1, h2, h3").filter({ hasText: site.section }).first();
+      await heading.evaluate((el) => {
+        const sec = el.closest("section") || el;
+        window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY, behavior: "instant" });
+      });
+      await page.waitForTimeout(2500);
     }
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `shots/${id}.png` });
