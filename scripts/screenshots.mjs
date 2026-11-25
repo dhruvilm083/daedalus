@@ -59,11 +59,17 @@ for (const [id, site] of Object.entries(SITES)) {
     }
     if (site.section) {
       // bring that section's heading to the top of the frame, then let any scroll-in animations play
-      const heading = page.locator("h1, h2, h3").filter({ hasText: site.section }).first();
-      await heading.evaluate((el) => {
+      // find it by an anchor id (#how-it-works) or by any element whose own text matches
+      const found = await page.evaluate((src) => {
+        const re = new RegExp(src, "i");
+        let el = document.querySelector('[id*="how" i]');
+        if (!el) el = [...document.querySelectorAll("body *")].find((e) => [...e.childNodes].some((n) => n.nodeType === 3 && re.test(n.textContent)) && !e.closest("nav, header, a, button"));
+        if (!el) return { ok: false, url: location.href, headings: [...document.querySelectorAll("h1,h2,h3,h4,[id]")].slice(0, 40).map((e) => e.tagName + "#" + e.id + ":" + e.textContent.trim().slice(0, 40)) };
         const sec = el.closest("section") || el;
         window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY, behavior: "instant" });
-      });
+        return { ok: true, tag: sec.tagName, id: sec.id };
+      }, site.section.source);
+      console.log("section", id, JSON.stringify(found));
       await page.waitForTimeout(2500);
     }
     await page.waitForTimeout(1500);
